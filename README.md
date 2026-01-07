@@ -403,7 +403,7 @@ For compile-time tuning, modify `arch/arm64/configs/hunter_defconfig`:
 
 Use Kernel Manager apps (root required):
 - **Franco Kernel Manager**
-- **SmartPack Kernel Manager**
+- **HKTweaks**
 - **EX Kernel Manager**
 
 These apps provide GUI for tuning and can apply settings on boot.
@@ -493,6 +493,7 @@ KernelSU integration follows its respective license.
 
 ## 🙏 Credits
 
+- HunterGaming1212 (Github)
 - Samsung for kernel sources
 - KernelSU developers
 - osm0sis for AnyKernel3
