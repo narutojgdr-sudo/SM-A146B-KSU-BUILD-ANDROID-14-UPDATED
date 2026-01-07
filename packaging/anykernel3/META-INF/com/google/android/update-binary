@@ -1,0 +1,217 @@
+#!/sbin/sh
+# AnyKernel3 Backend (DO NOT CHANGE)
+# osm0sis @ xda-developers
+
+OUTFD=/proc/self/fd/$2;
+ZIPFILE="$3";
+
+ps | grep zygote | grep -v grep >/dev/null && BOOTMODE=true || BOOTMODE=false;
+$BOOTMODE || ps -A 2>/dev/null | grep zygote | grep -v grep >/dev/null && BOOTMODE=true;
+
+$BOOTMODE && DIR=/sdcard || DIR=$(dirname "$ZIPFILE");
+
+test "$AKHOME" || AKHOME=/data/local;
+test "$BIN" || BIN=/data/adb/magisk;
+if [ ! -d "$BIN" ]; then
+  BIN=/data/adb/ksu/bin;
+  if [ ! -d "$BIN" ]; then
+    BIN=/data/adb/ap/bin;
+    if [ ! -d "$BIN" ]; then
+      BIN=$AKHOME/bin;
+    fi;
+  fi;
+fi;
+
+ui_print() {
+  until [ ! "$1" ]; do
+    echo -e "ui_print $1\nui_print" >> $OUTFD;
+    shift;
+  done;
+}
+show_progress() { echo "progress $1 $2" >> $OUTFD; }
+file_getprop() { grep "^$2=" "$1" | head -n1 | cut -d= -f2-; }
+int2ver() {
+  if [ "$1" -eq "$1" ] 2>/dev/null; then
+    ver="$1";
+  elif [ ! "$(echo "$1" | tr -d '[:digit:]')" ]; then
+    ver="$1";
+  elif [ "$(echo "$1" | tr -d '[:digit:].')" ]; then
+    ver=$(echo "$1" | tr -c -d '[:digit:]');
+  else
+    ver=$(echo "$1" | tr -d '[:alpha:] ._-');
+  fi;
+  echo "$ver";
+}
+cleanup() { rm -rf $AKHOME/anykernel; }
+debugging() {
+  case $(basename "$ZIPFILE" .zip) in
+    *-debugging)
+      ui_print " " "Creating debugging archive in $DIR...";
+      test -f /tmp/recovery.log && log=/tmp/recovery.log;
+      $BB tar -czf "$DIR/anykernel3-$(date +%Y-%m-%d_%H%M%S)-debug.tgz" $AKHOME/anykernel $log;
+    ;;
+  esac;
+}
+is_mounted() { mount | grep -q " $1 "; }
+setup_mountpoint() {
+  test -L $1 && mv -f $1 ${1}_link;
+  if [ ! -d $1 ]; then
+    rm -f $1;
+    mkdir -p $1;
+  fi;
+}
+unmount_all() {
+  (if [ ! -d /postinstall/tmp ]; then
+    umount /postinstall;
+    rmdir /postinstall;
+  fi) 2>/dev/null;
+}
+abort() {
+  ui_print "$*";
+  debugging;
+  if [ ! -f $AKHOME/anykernel/anykernel.sh -o "$(file_getprop $AKHOME/anykernel/anykernel.sh do.cleanuponabort)" == 1 ]; then
+    cleanup;
+  fi;
+  unmount_all;
+  exit 1;
+}
+
+show_progress 1.34 4;
+ui_print " ";
+cleanup;
+mkdir -p $AKHOME/anykernel;
+cd $AKHOME/anykernel;
+unzip -o "$ZIPFILE";
+if [ $? != 0 -o ! "$(ls -A $AKHOME/anykernel)" ]; then
+  abort "Unzip failed. Aborting...";
+fi;
+chmod -R 755 $AKHOME/anykernel/tools $AKHOME/anykernel/*.sh;
+
+BB=$BIN/busybox;
+if [ ! -x "$BB" ]; then
+  BB=$AKHOME/anykernel/tools/busybox;
+  if [ ! -f "$BB" ]; then
+    abort "AnyKernel3 requires BusyBox to be installed!";
+  fi;
+  chmod 755 $BB;
+fi;
+
+ui_print "### AnyKernel3 by osm0sis @ xda-developers ###";
+ui_print " ";
+ui_print "$(file_getprop $AKHOME/anykernel/anykernel.sh kernel.string)";
+ui_print " ";
+
+$BB mount -o bind /dev/urandom /dev/random;
+umount_f() {
+  if [ "$MNT" ]; then
+    if [ ! -d "$MNT" ]; then
+      MNT=$(dirname "$MNT");
+    fi;
+    (umount "$MNT";
+    test -d /postinstall && test "$MNT" == /postinstall/system && umount /postinstall) 2>/dev/null;
+  fi;
+}
+mount_apex() {
+  test -d /system_root && ui_print "Using system_root...";
+  (for APEX in /system/apex/*; do
+    APEX_MOUNT="/apex/$(basename $APEX .apex)";
+    test -d "$APEX_MOUNT" || (mkdir -p "$APEX_MOUNT" 2>/dev/null && mount -t ext4 -o ro,noatime "$APEX" "$APEX_MOUNT" 2>/dev/null && ui_print "Mounted: $APEX_MOUNT");
+  done;
+  for APEX in /system_root/system/apex/*; do
+    APEX_MOUNT="/apex/$(basename $APEX .apex)";
+    test -d "$APEX_MOUNT" || (mkdir -p "$APEX_MOUNT" 2>/dev/null && mount -t ext4 -o ro,noatime "$APEX" "$APEX_MOUNT" 2>/dev/null && ui_print "Mounted: $APEX_MOUNT");
+  done) 2>/dev/null;
+}
+mount_all() {
+  if ! is_mounted /cache; then
+    setup_mountpoint /cache;
+    mount -o ro -t auto /cache 2>/dev/null;
+  fi;
+  ($BB mount -o ro -t auto /system || mount -o ro -t auto /system || /system/bin/mount /system || /system/bin/mount -o ro -t auto /system || mount /system) 2>/dev/null;
+  is_mounted /system || setup_mountpoint /system;
+  (mount -o ro -t auto /system;
+  is_mounted /system || mount -o ro -t auto /dev/block/bootdevice/by-name/system /system) 2>/dev/null;
+  is_mounted /system_root && MNT=/system_root || MNT=/system;
+  if [ -f /system/system/build.prop ]; then
+    umount_f;
+    setup_mountpoint /system_root;
+    (mount -o ro -t auto /dev/block/bootdevice/by-name/system /system_root;
+    mount -o bind /system_root/system /system) 2>/dev/null;
+    MNT=/system_root;
+  fi;
+  if ! is_mounted /system; then
+    setup_mountpoint /system;
+    ($BB mount -o ro -t auto /system || mount -o ro -t auto /system) 2>/dev/null;
+  fi;
+  mount -o remount,rw,auto / 2>/dev/null;
+  mount -o remount,rw,auto $MNT 2>/dev/null;
+  mount -o remount,rw,auto /system 2>/dev/null;
+  (if [ -f /apex/com.android.runtime/etc/ld.config.txt ]; then
+    mount -o bind /system/apex/com.android.runtime /apex/com.android.runtime 2>/dev/null;
+  fi;
+  if [ -f /apex/com.android.art/etc/ld.config.txt ]; then
+    mount -o bind /system/apex/com.android.art /apex/com.android.art 2>/dev/null;
+  fi) 2>/dev/null;
+  if [ -d /apex/com.android.runtime/bin ]; then
+    export PATH=/apex/com.android.runtime/bin:/apex/com.android.art/bin:$PATH;
+  fi;
+  mount_apex;
+  if ! is_mounted /vendor; then
+    setup_mountpoint /vendor;
+    (mount -o ro -t auto /vendor || mount /vendor || /system/bin/mount /vendor || /system/bin/mount -o ro -t auto /vendor) 2>/dev/null;
+  fi;
+  if ! is_mounted /product; then
+    setup_mountpoint /product;
+    (mount -o ro -t auto /product || mount /product || /system/bin/mount /product || /system/bin/mount -o ro -t auto /product) 2>/dev/null;
+  fi;
+  if ! is_mounted /persist; then
+    setup_mountpoint /persist;
+    mount -o ro -t auto /persist 2>/dev/null;
+  fi;
+  if ! is_mounted /metadata; then
+    setup_mountpoint /metadata;
+    mount -o ro -t auto /metadata 2>/dev/null;
+  fi;
+  setup_mountpoint /postinstall;
+  mount -o bind /data /postinstall 2>/dev/null;
+  if [ -f /postinstall/system/build.prop ]; then
+    (umount /postinstall;
+    setup_mountpoint /postinstall/system;
+    mount -o bind /system /postinstall/system) 2>/dev/null;
+  fi;
+}
+mount_all;
+
+SYSTEM=/system;
+VENDOR=/vendor;
+test -f /system/system/build.prop && SYSTEM=/system/system;
+test -f /system/vendor/build.prop && VENDOR=/system/vendor;
+
+if [ -f "$AKHOME/anykernel/banner" ]; then
+  while IFS='' read -r line || $BB [[ -n "$line" ]]; do
+    ui_print "$line";
+  done < $AKHOME/anykernel/banner;
+  ui_print " ";
+  ui_print " ";
+fi;
+
+ui_print "AnyKernel3 by osm0sis @ xda-developers";
+ui_print " ";
+ui_print " ";
+
+/system/bin/sh $AKHOME/anykernel/anykernel.sh $2;
+if [ $? != 0 ]; then
+  abort;
+fi;
+
+debugging;
+
+if [ "$(file_getprop $AKHOME/anykernel/anykernel.sh do.cleanup)" == 1 ]; then
+  cleanup;
+fi;
+
+unmount_all;
+
+ui_print " ";
+ui_print " ";
+ui_print "Done!";

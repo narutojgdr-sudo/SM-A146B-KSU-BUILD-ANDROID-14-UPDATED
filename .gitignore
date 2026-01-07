@@ -1,0 +1,69 @@
+# Build output directories
+out/
+dist/
+*.o
+*.a
+*.so
+*.ko
+*.mod
+*.mod.c
+*.symvers
+*.order
+
+# Kernel build artifacts
+vmlinux
+vmlinux.symvers
+System.map
+Module.symvers
+modules.order
+.tmp_versions/
+*.img
+*.dtb
+*.dtbo
+
+# Compiler/build cache
+.cache/
+*.cmd
+.*.cmd
+*.log
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Toolchains (usually cloned separately)
+toolchain/
+
+# Temporary files
+*.tmp
+/tmp/
+
+# AnyKernel3 working directories (temporary build)
+packaging/anykernel3/Image
+packaging/anykernel3/dtb
+packaging/anykernel3/dtbo.img
+packaging/anykernel3/zImage
+
+# Distribution ZIPs (built artifacts, not source)
+# Uncomment if you don't want to commit release ZIPs:
+# *.zip
+
+# GCC/Clang specific
+*.d
+.*.d
+
+# Kernel configuration
+.config
+.config.old
+
+# Debian packaging
+debian/
+
+# Tags
+tags
+TAGS
+cscope.*
