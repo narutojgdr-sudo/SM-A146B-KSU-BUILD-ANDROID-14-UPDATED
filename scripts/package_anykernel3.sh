@@ -25,13 +25,20 @@ DTBO_IMAGE="dtbo.img"
 
 # Build timestamp
 BUILD_DATE=$(date +%Y%m%d-%H%M)
-KERNEL_VERSION=$(cat "$KERNEL_ROOT/Makefile" | grep "^VERSION = " | awk '{print $3}')
-PATCHLEVEL=$(cat "$KERNEL_ROOT/Makefile" | grep "^PATCHLEVEL = " | awk '{print $3}')
-SUBLEVEL=$(cat "$KERNEL_ROOT/Makefile" | grep "^SUBLEVEL = " | awk '{print $3}')
-KERNEL_VER="${KERNEL_VERSION}.${PATCHLEVEL}.${SUBLEVEL}"
+
+# Parse kernel version from Makefile efficiently
+eval $(awk '/^VERSION = |^PATCHLEVEL = |^SUBLEVEL = / {gsub(/ /, "", $3); print $1"="$3}' "$KERNEL_ROOT/Makefile")
+KERNEL_VER="${VERSION}.${PATCHLEVEL}.${SUBLEVEL}"
+
+# Detect KernelSU presence
+if [ -d "$KERNEL_ROOT/KernelSU" ]; then
+    KSU_TAG="KSU-"
+else
+    KSU_TAG=""
+fi
 
 # Output ZIP name
-ZIP_NAME="AnyKernel3-SM-A146B-KSU-${KERNEL_VER}-${BUILD_DATE}.zip"
+ZIP_NAME="AnyKernel3-SM-A146B-${KSU_TAG}${KERNEL_VER}-${BUILD_DATE}.zip"
 
 # Help message
 show_help() {
@@ -178,7 +185,7 @@ echo ""
 echo -e "${YELLOW}Creating flashable ZIP...${NC}"
 cd "$TEMP_DIR"
 ZIP_PATH="$DIST_DIR/$ZIP_NAME"
-zip -r9 "$ZIP_PATH" * -x '*.git*' -x 'README.txt' > /dev/null
+zip -r9 "$ZIP_PATH" * -x '*.git*' -x 'tools/README.txt' > /dev/null
 
 # Verify ZIP was created
 if [ ! -f "$ZIP_PATH" ]; then

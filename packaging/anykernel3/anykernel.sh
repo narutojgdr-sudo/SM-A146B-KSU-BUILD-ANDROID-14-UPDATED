@@ -31,7 +31,7 @@ patch_vbmeta_flag=auto;
 . tools/ak3-core.sh;
 
 ## AnyKernel boot install
-split_boot; # use split_boot to skip ramdisk unpack, e.g. for devices with init_boot
+split_boot; # splits and extracts boot image components for patching
 
 # Detect actual model
 actual_model=$(getprop ro.product.model);
@@ -83,5 +83,5 @@ flash_dtbo;
 # For now, we keep it minimal as the kernel is in boot partition
 
 ## Cleanup and finish
-write_boot; # use write_boot to skip ramdisk repack, e.g. for devices with init_boot
-## end vendor_boot install
+write_boot; # repacks and flashes the modified boot image
+## end boot install

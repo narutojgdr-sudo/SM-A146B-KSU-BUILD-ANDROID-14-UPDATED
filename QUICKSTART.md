@@ -40,8 +40,12 @@ cd SM-A146B-KSU-BUILD-ANDROID-14-UPDATED
 Before flashing, verify your device model:
 
 ```bash
-# In ADB or terminal
+# In ADB shell (from PC) or terminal emulator (on device)
+adb shell getprop ro.product.model
+
+# Or directly on device in terminal emulator app:
 getprop ro.product.model
+
 # Should show: SM-A146B or SM-A146M
 ```
 
