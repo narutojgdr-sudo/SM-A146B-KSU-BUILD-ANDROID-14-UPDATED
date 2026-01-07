@@ -189,7 +189,7 @@ Both SM-A146B and SM-A146M use the **same Exynos 1330 (s5e8535) SoC** and share 
 | Component | Impact Level | Details |
 |-----------|-------------|---------|
 | **Kernel/SoC** | ✅ NONE | Identical Exynos 1330, same kernel works for both |
-| **DTB/DTBO** | ⚠️ LOW | Minor device tree variations (GPIO, sensors) |
+| **DTB/DTBO** | ⚠️ LOW | Minor device tree variations |
 | **Modem/Baseband** | ⚠️ MEDIUM | Different radio bands and modem firmware |
 | **CSC Code** | ℹ️ INFO | Different country/carrier settings |
 | **Partition Layout** | ✅ NONE | Identical partition structure |
