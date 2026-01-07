@@ -208,7 +208,6 @@ Both SM-A146B and SM-A146M use the **same Exynos 1330 (s5e8535) SoC** and share 
 
 ⚠️ **Possible (but rare):**
 - Slightly different sensor behavior
-- Minor GPIO differences
 - Some hardware features may need variant-specific DTB tweaks
 
 ❌ **NOT affected:**
@@ -228,7 +227,6 @@ Both SM-A146B and SM-A146M use the **same Exynos 1330 (s5e8535) SoC** and share 
   - Camera
   - Audio
   - Fingerprint
-  - NFC (if equipped)
 - 📱 Keep stock boot.img backup for quick recovery
 
 **Important:** While the kernel is compatible, if you experience hardware issues specific to your variant, please report them as they may require DTB adjustments.
@@ -274,8 +272,8 @@ echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 
 **Common schedulers:**
 - 🟢 `mq-deadline` (default) - Good for flash storage
-- 🟢 `noop/none` - Minimal overhead, good for SSDs
-- 🟡 `cfq` - Fair queuing, better for HDDs
+- 🟢 `noop/none` - Minimal overhead
+- 🟡 `cfq` - Fair queuing
 - 🟡 `bfq` - Desktop-like responsiveness
 
 **Example:**
@@ -403,7 +401,7 @@ For compile-time tuning, modify `arch/arm64/configs/hunter_defconfig`:
 
 Use Kernel Manager apps (root required):
 - **Franco Kernel Manager**
-- **SmartPack Kernel Manager**
+- **HKTweaks**
 - **EX Kernel Manager**
 
 These apps provide GUI for tuning and can apply settings on boot.
@@ -493,6 +491,7 @@ KernelSU integration follows its respective license.
 
 ## 🙏 Credits
 
+- HunterGaming1212 (Github)
 - Samsung for kernel sources
 - KernelSU developers
 - osm0sis for AnyKernel3
