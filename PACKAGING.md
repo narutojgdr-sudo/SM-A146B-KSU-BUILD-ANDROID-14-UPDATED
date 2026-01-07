@@ -135,8 +135,8 @@ Create `packaging/anykernel3/banner`:
 
 ```
 ╔═══════════════════════════════════════╗
-║   My Custom Kernel for Galaxy A14     ║
-║   Version 1.0 - Built with ❤️        ║
+║   Custom Kernel for Galaxy A14        ║
+║   Version 1.0 - Built with ❤️         ║
 ╚═══════════════════════════════════════╝
 ```
 
